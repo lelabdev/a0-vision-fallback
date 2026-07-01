@@ -1,111 +1,103 @@
 <html>
 <head>
   <title>Vision Fallback Settings</title>
-  <script type="module">
-    import { store } from "/components/plugins/plugin-settings-store.js";
-  </script>
+</head>
+<body>
+  <div x-data x-init="
+    if (!config.vision_model) config.vision_model = {};
+    if (!config.vision_model.provider) config.vision_model.provider = 'openrouter';
+    if (!config.vision_model.name) config.vision_model.name = 'google/gemini-2.5-flash';
+    if (!config.vision_model.api_key) config.vision_model.api_key = '';
+    if (!config.vision_model.api_base) config.vision_model.api_base = '';
+    if (!config.prompt) config.prompt = 'Describe this image in detail. Include objects, colors, text, layout, and any notable features. Be concise but thorough.';
+    if (config.enabled === undefined) config.enabled = true;
+  ">
+
+    <div class="vf-section">⚡ Vision Fallback</div>
+
+    <div class="vf-field">
+      <label class="vf-toggle">
+        <input type="checkbox" x-model="config.enabled" />
+        <span><strong>Enable Vision Fallback</strong></span>
+      </label>
+      <div class="vf-help">When enabled, images are sent to a dedicated vision model instead of the main chat model (which may not support vision).</div>
+    </div>
+
+    <div class="vf-section">Vision Model Configuration</div>
+
+    <div class="vf-field">
+      <label class="vf-label">Provider</label>
+      <select class="vf-input" x-model="config.vision_model.provider">
+        <option value="openrouter">OpenRouter</option>
+        <option value="ollama">Ollama (Local)</option>
+        <option value="ollama_cloud">Ollama Cloud</option>
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Anthropic</option>
+        <option value="google">Google AI</option>
+        <option value="groq">Groq</option>
+        <option value="other">Other (LiteLLM)</option>
+      </select>
+    </div>
+
+    <div class="vf-field">
+      <label class="vf-label">Model Name</label>
+      <input type="text" class="vf-input" x-model="config.vision_model.name" placeholder="google/gemini-2.5-flash" />
+      <div class="vf-help">Examples: <code>google/gemini-2.5-flash</code>, <code>llama3.2-vision</code>, <code>gpt-4o-mini</code>, <code>gpt-oss:120b</code></div>
+    </div>
+
+    <div class="vf-field">
+      <label class="vf-label">API Key</label>
+      <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-... / OLLAMA_API_KEY" />
+      <div class="vf-help">API key for the provider. Leave empty for local models (Ollama local).</div>
+    </div>
+
+    <div class="vf-field">
+      <label class="vf-label">API Base URL (optional)</label>
+      <input type="text" class="vf-input" x-model="config.vision_model.api_base" placeholder="https://ollama.com" />
+      <div class="vf-help">Auto-set for Ollama Cloud (<code>https://ollama.com</code>). Leave empty unless using a custom endpoint.</div>
+    </div>
+
+    <div class="vf-section">Description Prompt</div>
+
+    <div class="vf-field">
+      <label class="vf-label">Prompt</label>
+      <textarea class="vf-input" x-model="config.prompt" rows="3" placeholder="Describe this image..."></textarea>
+      <div class="vf-help">The prompt sent to the vision model when describing images.</div>
+    </div>
+
+  </div>
+
   <style>
     .vf-field { margin-bottom: 16px; }
-    .vf-label { display: block; font-weight: 600; margin-bottom: 4px; }
+    .vf-label { display: block; font-weight: 600; margin-bottom: 4px; color: var(--color-text-primary, inherit); }
     .vf-input {
       width: 100%;
       padding: 8px 12px;
-      border: 1px solid var(--border-color, #444);
+      border: 1px solid var(--color-border, #444);
       border-radius: 6px;
-      background: var(--bg-input, inherit);
-      color: var(--text-primary, inherit);
+      background: var(--color-bg-input, inherit);
+      color: var(--color-text-primary, inherit);
       box-sizing: border-box;
     }
     .vf-input:focus {
       outline: none;
-      border-color: var(--accent-color, #3b82f6);
+      border-color: var(--color-accent, #3b82f6);
     }
-    .vf-help { font-size: 0.85em; opacity: 0.7; margin-top: 4px; }
+    .vf-help { font-size: 0.85em; color: var(--color-text-secondary, #888); margin-top: 4px; }
+    .vf-help code {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--color-bg-code, rgba(128,128,128,0.15));
+      font-size: 0.9em;
+    }
     .vf-toggle { display: flex; align-items: center; gap: 8px; }
     .vf-section {
       font-size: 1.1em;
       font-weight: 700;
       margin: 20px 0 12px;
       padding-bottom: 8px;
-      border-bottom: 1px solid var(--border-color, var(--border-light, #333));
-    }
-    .vf-hint code {
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: var(--bg-code, rgba(128,128,128,0.15));
-      font-size: 0.9em;
+      border-bottom: 1px solid var(--color-border, #333);
     }
   </style>
-</head>
-<body>
-  <div x-data>
-    <template x-if="$store.pluginSettingsPrototype">
-      <div x-init="
-                $store.pluginSettingsPrototype.onOpen();
-                if (!config.vision_model) config.vision_model = {};
-                if (!config.vision_model.provider) config.vision_model.provider = 'openrouter';
-                if (!config.vision_model.name) config.vision_model.name = 'google/gemini-2.5-flash';
-                if (!config.vision_model.api_key) config.vision_model.api_key = '';
-                if (!config.vision_model.api_base) config.vision_model.api_base = '';
-                if (!config.prompt) config.prompt = 'Describe this image in detail. Include objects, colors, text, layout, and any notable features. Be concise but thorough.';
-                if (config.enabled === undefined) config.enabled = true;
-              ">
-
-        <div class="vf-section">⚡ Vision Fallback</div>
-
-        <div class="vf-field">
-          <label class="vf-toggle">
-            <input type="checkbox" x-model="config.enabled" />
-            <span><strong>Enable Vision Fallback</strong></span>
-          </label>
-          <div class="vf-help">When enabled, images are sent to a dedicated vision model instead of the main chat model (which may not support vision).</div>
-        </div>
-
-        <div class="vf-section">Vision Model Configuration</div>
-
-        <div class="vf-field">
-          <label class="vf-label">Provider</label>
-          <select class="vf-input" x-model="config.vision_model.provider">
-            <option value="openrouter">OpenRouter</option>
-            <option value="ollama">Ollama (Local)</option>
-            <option value="ollama_cloud">Ollama Cloud</option>
-            <option value="openai">OpenAI</option>
-            <option value="anthropic">Anthropic</option>
-            <option value="google">Google AI</option>
-            <option value="groq">Groq</option>
-            <option value="other">Other (LiteLLM)</option>
-          </select>
-          <div class="vf-help">The provider for the vision model.</div>
-        </div>
-
-        <div class="vf-field">
-          <label class="vf-label">Model Name</label>
-          <input type="text" class="vf-input" x-model="config.vision_model.name" placeholder="google/gemini-2.5-flash" />
-          <div class="vf-help vf-hint">Examples: <code>google/gemini-2.5-flash</code>, <code>llama3.2-vision</code>, <code>gpt-4o-mini</code>, <code>gpt-oss:120b</code></div>
-        </div>
-
-        <div class="vf-field">
-          <label class="vf-label">API Key</label>
-          <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-... / OLLAMA_API_KEY" />
-          <div class="vf-help">API key for the provider. Leave empty for local models (Ollama local).</div>
-        </div>
-
-        <div class="vf-field">
-          <label class="vf-label">API Base URL (optional)</label>
-          <input type="text" class="vf-input" x-model="config.vision_model.api_base" placeholder="https://ollama.com" />
-          <div class="vf-help vf-hint">Auto-set for Ollama Cloud (<code>https://ollama.com</code>). Leave empty unless using a custom endpoint.</div>
-        </div>
-
-        <div class="vf-section">Description Prompt</div>
-
-        <div class="vf-field">
-          <label class="vf-label">Prompt</label>
-          <textarea class="vf-input" x-model="config.prompt" rows="3" placeholder="Describe this image..."></textarea>
-          <div class="vf-help">The prompt sent to the vision model when describing images.</div>
-        </div>
-
-      </div>
-    </template>
-  </div>
 </body>
 </html>
