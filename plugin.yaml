@@ -1,4 +1,4 @@
-name: vision_fallback
+name: a0_vision_fallback
 title: Vision Fallback
 description: Routes image analysis to a dedicated vision model when the chat model doesn't support vision.
 version: 1.0.0

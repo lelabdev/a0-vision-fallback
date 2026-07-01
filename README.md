@@ -28,12 +28,12 @@ Plugin checks: does chat_model support vision?
 
 ### Option A: Symlink (Development)
 ```bash
-ln -s /path/to/vision-fallback /a0/usr/plugins/vision_fallback
+ln -s /path/to/vision-fallback /a0/usr/plugins/a0_vision_fallback
 ```
 
 ### Option B: Copy
 ```bash
-cp -r /path/to/vision-fallback /a0/usr/plugins/vision_fallback
+cp -r /path/to/vision-fallback /a0/usr/plugins/a0_vision_fallback
 ```
 
 Then restart Agent Zero.

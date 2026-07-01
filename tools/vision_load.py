@@ -12,7 +12,7 @@ from helpers.tool import Tool, Response
 from helpers import runtime, files, plugins, ephemeral_images, images, chat_media, history
 from mimetypes import guess_type
 
-from usr.plugins.vision_fallback.helpers.vision_describe import (
+from usr.plugins.a0_vision_fallback.helpers.vision_describe import (
     is_enabled as fallback_is_enabled,
     describe_image,
 )
