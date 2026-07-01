@@ -1,25 +1,22 @@
 <html>
 <head>
   <title>Vision Fallback Settings</title>
+  <script type="module">
+    import { store } from "/plugins/a0_vision_fallback/webui/vision-fallback-store.js";
+  </script>
 </head>
 <body>
-  <div x-data="{
-      showApiBase: false,
-      init() {
-        this.showApiBase = config.vision_model?.provider === 'other';
-        this.$watch('config.vision_model.provider', (val) => {
-          this.showApiBase = val === 'other';
-        });
-      }
-    }" x-init="
-    if (!config.vision_model) config.vision_model = {};
-    if (!config.vision_model.provider) config.vision_model.provider = 'openrouter';
-    if (!config.vision_model.name) config.vision_model.name = 'google/gemini-2.5-flash';
-    if (!config.vision_model.api_key) config.vision_model.api_key = '';
-    if (!config.vision_model.api_base) config.vision_model.api_base = '';
-    if (!config.prompt) config.prompt = 'Describe this image in detail.';
-    if (config.enabled === undefined) config.enabled = true;
-  ">
+  <div x-data
+       x-init="
+         await $store.visionFallbackStore.loadProviders();
+         if (!config.vision_model) config.vision_model = {};
+         if (!config.vision_model.provider) config.vision_model.provider = 'openrouter';
+         if (!config.vision_model.name) config.vision_model.name = 'google/gemini-2.5-flash';
+         if (!config.vision_model.api_key) config.vision_model.api_key = '';
+         if (!config.vision_model.api_base) config.vision_model.api_base = '';
+         if (!config.prompt) config.prompt = 'Describe this image in detail.';
+         if (config.enabled === undefined) config.enabled = true;
+       ">
 
     <div class="vf-section">⚡ Vision Fallback</div>
 
@@ -28,7 +25,7 @@
         <input type="checkbox" x-model="config.enabled" />
         <span><strong>Enable Vision Fallback</strong></span>
       </label>
-      <div class="vf-help">When enabled, images are sent to a dedicated vision model instead of the main chat model.</div>
+      <div class="vf-help">When enabled, images are intercepted and sent to a dedicated vision model instead of the main chat model.</div>
     </div>
 
     <div class="vf-section">Vision Model</div>
@@ -36,15 +33,21 @@
     <div class="vf-field">
       <label class="vf-label">Provider</label>
       <select class="vf-input" x-model="config.vision_model.provider">
-        <option value="openrouter">OpenRouter</option>
-        <option value="ollama">Ollama (Local)</option>
-        <option value="ollama_cloud">Ollama Cloud</option>
-        <option value="openai">OpenAI</option>
-        <option value="anthropic">Anthropic</option>
-        <option value="google">Google AI</option>
-        <option value="groq">Groq</option>
-        <option value="other">Other (LiteLLM)</option>
+        <template x-for="p in $store.visionFallbackStore.available" :key="p.id">
+          <option :value="p.id" x-text="p.label + ' ✅'"></option>
+        </template>
+        <template x-if="$store.visionFallbackStore.unavailable.length > 0">
+          <optgroup label="⚠️ No API key">
+            <template x-for="p in $store.visionFallbackStore.unavailable" :key="p.id">
+              <option :value="p.id" x-text="p.label"></option>
+            </template>
+          </optgroup>
+        </template>
       </select>
+      <div class="vf-help"
+           x-show="$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
+        ✅ API key found in <code x-text="$store.visionFallbackStore.getEnvVar(config.vision_model.provider)"></code>
+      </div>
     </div>
 
     <div class="vf-field">
@@ -53,13 +56,15 @@
       <div class="vf-help">Examples: <code>google/gemini-2.5-flash</code>, <code>llama3.2-vision</code>, <code>gpt-4o-mini</code>, <code>gpt-oss:120b</code></div>
     </div>
 
-    <div class="vf-field">
-      <label class="vf-label">API Key</label>
-      <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-..." />
-      <div class="vf-help">Leave empty for local models (Ollama local).</div>
-    </div>
+    <template x-if="!$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
+      <div class="vf-field">
+        <label class="vf-label">API Key</label>
+        <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-..." />
+        <div class="vf-help">No key found for this provider in .env. Enter it manually.</div>
+      </div>
+    </template>
 
-    <template x-if="showApiBase">
+    <template x-if="config.vision_model.provider === 'other'">
       <div class="vf-field">
         <label class="vf-label">API Base URL</label>
         <input type="text" class="vf-input" x-model="config.vision_model.api_base" placeholder="https://custom-endpoint.com" />
