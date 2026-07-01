@@ -6,9 +6,37 @@ This is used when the main chat model doesn't support vision input.
 import base64
 import hashlib
 import mimetypes
+import os
 from pathlib import Path
 
 import litellm
+
+# Provider to .env variable mapping
+_PROVIDER_ENV_KEYS = {
+    "openrouter": "API_KEY_OPENROUTER",
+    "ollama": "API_KEY_OLLAMA",
+    "ollama_cloud": "API_KEY_OLLAMA_CLOUD",
+    "openai": "API_KEY_OPENAI",
+    "anthropic": "API_KEY_ANTHROPIC",
+    "google": "API_KEY_GOOGLE",
+    "groq": "API_KEY_GROQ",
+    "xai": "API_KEY_XAI",
+    "mistral": "API_KEY_MISTRAL",
+    "deepseek": "API_KEY_DEEPSEEK",
+    "venice": "API_KEY_VENICE",
+    "sambanova": "API_KEY_SAMBANOVA",
+    "huggingface": "API_KEY_HUGGINGFACE",
+    "nebius": "API_KEY_NEBIUS",
+    "moonshot": "API_KEY_MOONSHOT",
+}
+
+
+def _resolve_api_key_from_env(provider: str) -> str:
+    """Try to resolve API key from Agent Zero .env variables."""
+    env_var = _PROVIDER_ENV_KEYS.get(provider, "")
+    if env_var:
+        return os.environ.get(env_var, "")
+    return ""
 
 # Simple in-memory cache: {image_hash: description}
 # Avoids re-calling the vision model for the same image in the same session
@@ -92,7 +120,8 @@ async def describe_image(image_path: str) -> str:
     model_cfg = get_vision_model_config()
     provider = model_cfg.get("provider", "openrouter")
     model_name = model_cfg.get("name", "google/gemini-2.5-flash")
-    api_key = model_cfg.get("api_key", "")
+    # Auto-resolve API key from plugin config, then from Agent Zero .env
+    api_key = model_cfg.get("api_key", "") or _resolve_api_key_from_env(provider)
     api_base = model_cfg.get("api_base", "")
     prompt = get_prompt()
 
