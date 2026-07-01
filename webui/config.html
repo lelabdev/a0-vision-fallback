@@ -40,7 +40,16 @@
 <body>
   <div x-data>
     <template x-if="$store.pluginSettingsPrototype">
-      <div x-init="$store.pluginSettingsPrototype.onOpen()">
+      <div x-init="
+                $store.pluginSettingsPrototype.onOpen();
+                if (!config.vision_model) config.vision_model = {};
+                if (!config.vision_model.provider) config.vision_model.provider = 'openrouter';
+                if (!config.vision_model.name) config.vision_model.name = 'google/gemini-2.5-flash';
+                if (!config.vision_model.api_key) config.vision_model.api_key = '';
+                if (!config.vision_model.api_base) config.vision_model.api_base = '';
+                if (!config.prompt) config.prompt = 'Describe this image in detail. Include objects, colors, text, layout, and any notable features. Be concise but thorough.';
+                if (config.enabled === undefined) config.enabled = true;
+              ">
 
         <div class="vf-section">⚡ Vision Fallback</div>
 
