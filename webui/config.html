@@ -3,13 +3,21 @@
   <title>Vision Fallback Settings</title>
 </head>
 <body>
-  <div x-data x-init="
+  <div x-data="{
+      showApiBase: false,
+      init() {
+        this.showApiBase = config.vision_model?.provider === 'other';
+        this.$watch('config.vision_model.provider', (val) => {
+          this.showApiBase = val === 'other';
+        });
+      }
+    }" x-init="
     if (!config.vision_model) config.vision_model = {};
     if (!config.vision_model.provider) config.vision_model.provider = 'openrouter';
     if (!config.vision_model.name) config.vision_model.name = 'google/gemini-2.5-flash';
     if (!config.vision_model.api_key) config.vision_model.api_key = '';
     if (!config.vision_model.api_base) config.vision_model.api_base = '';
-    if (!config.prompt) config.prompt = 'Describe this image in detail. Include objects, colors, text, layout, and any notable features. Be concise but thorough.';
+    if (!config.prompt) config.prompt = 'Describe this image in detail.';
     if (config.enabled === undefined) config.enabled = true;
   ">
 
@@ -20,10 +28,10 @@
         <input type="checkbox" x-model="config.enabled" />
         <span><strong>Enable Vision Fallback</strong></span>
       </label>
-      <div class="vf-help">When enabled, images are sent to a dedicated vision model instead of the main chat model (which may not support vision).</div>
+      <div class="vf-help">When enabled, images are sent to a dedicated vision model instead of the main chat model.</div>
     </div>
 
-    <div class="vf-section">Vision Model Configuration</div>
+    <div class="vf-section">Vision Model</div>
 
     <div class="vf-field">
       <label class="vf-label">Provider</label>
@@ -47,23 +55,16 @@
 
     <div class="vf-field">
       <label class="vf-label">API Key</label>
-      <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-... / OLLAMA_API_KEY" />
-      <div class="vf-help">API key for the provider. Leave empty for local models (Ollama local).</div>
+      <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-..." />
+      <div class="vf-help">Leave empty for local models (Ollama local).</div>
     </div>
 
-    <div class="vf-field">
-      <label class="vf-label">API Base URL (optional)</label>
-      <input type="text" class="vf-input" x-model="config.vision_model.api_base" placeholder="https://ollama.com" />
-      <div class="vf-help">Auto-set for Ollama Cloud (<code>https://ollama.com</code>). Leave empty unless using a custom endpoint.</div>
-    </div>
-
-    <div class="vf-section">Description Prompt</div>
-
-    <div class="vf-field">
-      <label class="vf-label">Prompt</label>
-      <textarea class="vf-input" x-model="config.prompt" rows="3" placeholder="Describe this image..."></textarea>
-      <div class="vf-help">The prompt sent to the vision model when describing images.</div>
-    </div>
+    <template x-if="showApiBase">
+      <div class="vf-field">
+        <label class="vf-label">API Base URL</label>
+        <input type="text" class="vf-input" x-model="config.vision_model.api_base" placeholder="https://custom-endpoint.com" />
+      </div>
+    </template>
 
   </div>
 
