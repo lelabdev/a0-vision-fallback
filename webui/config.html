@@ -6,17 +6,21 @@
   </script>
 </head>
 <body>
-  <div x-data
-       x-init="
-         await $store.visionFallbackStore.loadProviders();
-         if (!config.vision_model) config.vision_model = {};
-         if (!config.vision_model.provider) config.vision_model.provider = 'openrouter';
-         if (!config.vision_model.name) config.vision_model.name = 'google/gemini-2.5-flash';
-         if (!config.vision_model.api_key) config.vision_model.api_key = '';
-         if (!config.vision_model.api_base) config.vision_model.api_base = '';
-         if (!config.prompt) config.prompt = 'Describe this image in detail.';
-         if (config.enabled === undefined) config.enabled = true;
-       ">
+  <div x-data="{
+      useCustomKey: false,
+      init() {
+        this.useCustomKey = !!config.vision_model?.api_key;
+      }
+    }" x-init="
+      await $store.visionFallbackStore.loadProviders();
+      if (!config.vision_model) config.vision_model = {};
+      if (!config.vision_model.provider) config.vision_model.provider = 'openrouter';
+      if (!config.vision_model.name) config.vision_model.name = 'google/gemini-2.5-flash';
+      if (!config.vision_model.api_key) config.vision_model.api_key = '';
+      if (!config.vision_model.api_base) config.vision_model.api_base = '';
+      if (!config.prompt) config.prompt = 'Describe this image in detail.';
+      if (config.enabled === undefined) config.enabled = true;
+    ">
 
     <div class="vf-section">⚡ Vision Fallback</div>
 
@@ -43,27 +47,49 @@
             </template>
           </optgroup>
         </template>
+        <option value="other">Other (Custom)</option>
       </select>
-      <div class="vf-help"
-           x-show="$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
-        ✅ API key found in <code x-text="$store.visionFallbackStore.getEnvVar(config.vision_model.provider)"></code>
-      </div>
     </div>
 
     <div class="vf-field">
       <label class="vf-label">Model Name</label>
       <input type="text" class="vf-input" x-model="config.vision_model.name" placeholder="google/gemini-2.5-flash" />
-      <div class="vf-help">Examples: <code>google/gemini-2.5-flash</code>, <code>llama3.2-vision</code>, <code>gpt-4o-mini</code>, <code>gpt-oss:120b</code></div>
+      <div class="vf-help">Examples: <code>google/gemini-2.5-flash</code>, <code>llama3.2-vision</code>, <code>gemini-3-flash-preview</code></div>
     </div>
 
-    <template x-if="!$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
-      <div class="vf-field">
-        <label class="vf-label">API Key</label>
-        <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-..." />
-        <div class="vf-help">No key found for this provider in .env. Enter it manually.</div>
-      </div>
-    </template>
+    <!-- API Key Section -->
+    <div class="vf-field">
+      <!-- Badge: key detected in .env -->
+      <template x-if="$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
+        <div class="vf-key-badge vf-key-detected">
+          ✅ Default key detected in <code x-text="$store.visionFallbackStore.getEnvVar(config.vision_model.provider)"></code>
+        </div>
+      </template>
 
+      <!-- Toggle: Use custom key -->
+      <template x-if="$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
+        <label class="vf-toggle vf-key-toggle">
+          <input type="checkbox" x-model="useCustomKey" />
+          <span>Use a custom key instead</span>
+        </label>
+      </template>
+
+      <!-- Input: Custom key (always show if no default key, or if toggle is on) -->
+      <template x-if="!$store.visionFallbackStore.isConfigured(config.vision_model.provider) || useCustomKey">
+        <div>
+          <label class="vf-label">API Key</label>
+          <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-..." />
+          <template x-if="$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
+            <div class="vf-help vf-key-warning">⚠️ Leave empty to use the default key from <code x-text="$store.visionFallbackStore.getEnvVar(config.vision_model.provider)"></code></div>
+          </template>
+          <template x-if="!$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
+            <div class="vf-help vf-key-warning">⚠️ No key found for this provider. Enter one manually.</div>
+          </template>
+        </div>
+      </template>
+    </div>
+
+    <!-- API Base URL only for custom provider -->
     <template x-if="config.vision_model.provider === 'other'">
       <div class="vf-field">
         <label class="vf-label">API Base URL</label>
@@ -103,6 +129,35 @@
       margin: 20px 0 12px;
       padding-bottom: 8px;
       border-bottom: 1px solid var(--color-border, #333);
+    }
+    .vf-key-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      margin-bottom: 8px;
+    }
+    .vf-key-detected {
+      background: rgba(39, 174, 96, 0.15);
+      color: #27ae60;
+      border: 1px solid rgba(39, 174, 96, 0.3);
+    }
+    .vf-key-detected code {
+      background: rgba(39, 174, 96, 0.1);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    .vf-key-toggle {
+      font-size: 0.9em;
+      color: var(--color-text-secondary, #888);
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+    .vf-key-warning {
+      color: #e67e22;
     }
   </style>
 </body>
