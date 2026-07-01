@@ -4,17 +4,21 @@ This is used when the main chat model doesn't support vision input.
 """
 
 import base64
+import hashlib
 import mimetypes
 from pathlib import Path
 
 import litellm
-from helpers import settings
+
+# Simple in-memory cache: {image_hash: description}
+# Avoids re-calling the vision model for the same image in the same session
+_description_cache: dict[str, str] = {}
 
 
 def get_vision_config() -> dict:
     """Get the vision fallback plugin configuration."""
     from helpers.plugins import get_plugin_config
-    cfg = get_plugin_config("vision_fallback") or {}
+    cfg = get_plugin_config("a0_vision_fallback") or {}
     return cfg
 
 
@@ -39,8 +43,21 @@ def get_prompt() -> str:
     )
 
 
+def _hash_image(data_url: str) -> str:
+    """Compute a hash of an image data URL for cache lookup."""
+    return hashlib.md5(data_url.encode("utf-8")).hexdigest()
+
+
+def estimate_tokens(text: str) -> int:
+    """Estimate token count for a text string (~4 chars per token)."""
+    return max(1, len(text) // 4)
+
+
 def image_to_data_url(image_path: str) -> str:
-    """Convert a local image file to a data URL."""
+    """Convert a local image file or data URL to a data URL."""
+    if image_path.startswith("data:"):
+        return image_path
+
     path = Path(image_path)
     if not path.exists():
         raise FileNotFoundError(f"Image not found: {image_path}")
@@ -56,13 +73,22 @@ def image_to_data_url(image_path: str) -> str:
 async def describe_image(image_path: str) -> str:
     """
     Send an image to the vision model and get a text description.
+    Uses a simple hash-based cache to avoid duplicate API calls.
 
     Args:
-        image_path: Path to the local image file
+        image_path: Path to the local image file or a data URL
 
     Returns:
         Text description of the image
     """
+    # Convert to data URL first (needed for hashing and API call)
+    data_url = image_to_data_url(image_path)
+
+    # Check cache
+    img_hash = _hash_image(data_url)
+    if img_hash in _description_cache:
+        return _description_cache[img_hash]
+
     model_cfg = get_vision_model_config()
     provider = model_cfg.get("provider", "openrouter")
     model_name = model_cfg.get("name", "google/gemini-2.5-flash")
@@ -72,12 +98,6 @@ async def describe_image(image_path: str) -> str:
 
     # Build the LiteLLM model string
     litellm_model = f"{provider}/{model_name}" if provider not in ("openai", "azure") else model_name
-
-    # Convert image to data URL
-    if image_path.startswith("data:"):
-        data_url = image_path
-    else:
-        data_url = image_to_data_url(image_path)
 
     # Build messages for the vision model
     messages = [
@@ -103,7 +123,9 @@ async def describe_image(image_path: str) -> str:
 
     try:
         response = await litellm.acompletion(**kwargs)
-        description = response.choices[0].message.content
-        return description.strip()
+        description = response.choices[0].message.content.strip()
+        # Cache the result
+        _description_cache[img_hash] = description
+        return description
     except Exception as e:
         return f"[Vision Fallback Error: Failed to describe image: {e}]"

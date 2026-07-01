@@ -15,6 +15,7 @@ from mimetypes import guess_type
 from usr.plugins.a0_vision_fallback.helpers.vision_describe import (
     is_enabled as fallback_is_enabled,
     describe_image,
+    estimate_tokens,
 )
 
 TOKENS_ESTIMATE = 1500
@@ -226,7 +227,7 @@ class VisionLoad(Tool):
                 raw_content=[{"type": "text", "text": combined_text}],
                 preview="<Vision fallback image descriptions>",
             )
-            self.agent.hist_add_message(False, content=msg, tokens=500 * len(descriptions))
+            self.agent.hist_add_message(False, content=msg, tokens=estimate_tokens(combined_text))
 
             message = f"{loaded_count} images described via vision fallback, {skipped_count} skipped"
         else:
