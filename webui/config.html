@@ -1,26 +1,19 @@
 <html>
 <head>
   <title>Vision Fallback Settings</title>
-  <script type="module">
-    import { store } from "/plugins/a0_vision_fallback/webui/vision-fallback-store.js";
-  </script>
 </head>
 <body>
   <div x-data="{
-      useCustomKey: false,
-      init() {
-        this.useCustomKey = !!config.vision_model?.api_key;
-      }
+      showCustomKey: false,
     }" x-init="
-      await $store.visionFallbackStore.loadProviders();
-      if (!config.vision_model) config.vision_model = {};
-      if (!config.vision_model.provider) config.vision_model.provider = 'openrouter';
-      if (!config.vision_model.name) config.vision_model.name = 'google/gemini-2.5-flash';
-      if (!config.vision_model.api_key) config.vision_model.api_key = '';
-      if (!config.vision_model.api_base) config.vision_model.api_base = '';
-      if (!config.prompt) config.prompt = 'Describe this image in detail.';
-      if (config.enabled === undefined) config.enabled = true;
-    ">
+    if (!config.vision_model) config.vision_model = {};
+    if (!config.vision_model.provider) config.vision_model.provider = 'ollama_cloud';
+    if (!config.vision_model.name) config.vision_model.name = 'gemini-3-flash-preview';
+    if (!config.vision_model.api_key) config.vision_model.api_key = '';
+    if (!config.vision_model.api_base) config.vision_model.api_base = '';
+    if (!config.prompt) config.prompt = 'Describe this image in detail.';
+    if (config.enabled === undefined) config.enabled = true;
+  ">
 
     <div class="vf-section">⚡ Vision Fallback</div>
 
@@ -37,59 +30,39 @@
     <div class="vf-field">
       <label class="vf-label">Provider</label>
       <select class="vf-input" x-model="config.vision_model.provider">
-        <template x-for="p in $store.visionFallbackStore.available" :key="p.id">
-          <option :value="p.id" x-text="p.label + ' ✅'"></option>
-        </template>
-        <template x-if="$store.visionFallbackStore.unavailable.length > 0">
-          <optgroup label="⚠️ No API key">
-            <template x-for="p in $store.visionFallbackStore.unavailable" :key="p.id">
-              <option :value="p.id" x-text="p.label"></option>
-            </template>
-          </optgroup>
-        </template>
-        <option value="other">Other (Custom)</option>
+        <option value="ollama_cloud">Ollama Cloud</option>
+        <option value="openrouter">OpenRouter</option>
+        <option value="ollama">Ollama (Local)</option>
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Anthropic</option>
+        <option value="google">Google AI</option>
+        <option value="groq">Groq</option>
+        <option value="other">Other (LiteLLM)</option>
       </select>
+      <div class="vf-help">Select the provider that has your vision model.</div>
     </div>
 
     <div class="vf-field">
       <label class="vf-label">Model Name</label>
-      <input type="text" class="vf-input" x-model="config.vision_model.name" placeholder="google/gemini-2.5-flash" />
-      <div class="vf-help">Examples: <code>google/gemini-2.5-flash</code>, <code>llama3.2-vision</code>, <code>gemini-3-flash-preview</code></div>
+      <input type="text" class="vf-input" x-model="config.vision_model.name" placeholder="gemini-3-flash-preview" />
+      <div class="vf-help">Vision models: <code>gemini-3-flash-preview</code>, <code>llama3.2-vision</code>, <code>gpt-4o-mini</code></div>
     </div>
 
-    <!-- API Key Section -->
     <div class="vf-field">
-      <!-- Badge: key detected in .env -->
-      <template x-if="$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
-        <div class="vf-key-badge vf-key-detected">
-          ✅ Default key detected in <code x-text="$store.visionFallbackStore.getEnvVar(config.vision_model.provider)"></code>
-        </div>
-      </template>
-
-      <!-- Toggle: Use custom key -->
-      <template x-if="$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
-        <label class="vf-toggle vf-key-toggle">
-          <input type="checkbox" x-model="useCustomKey" />
-          <span>Use a custom key instead</span>
-        </label>
-      </template>
-
-      <!-- Input: Custom key (always show if no default key, or if toggle is on) -->
-      <template x-if="!$store.visionFallbackStore.isConfigured(config.vision_model.provider) || useCustomKey">
-        <div>
-          <label class="vf-label">API Key</label>
-          <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-..." />
-          <template x-if="$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
-            <div class="vf-help vf-key-warning">⚠️ Leave empty to use the default key from <code x-text="$store.visionFallbackStore.getEnvVar(config.vision_model.provider)"></code></div>
-          </template>
-          <template x-if="!$store.visionFallbackStore.isConfigured(config.vision_model.provider)">
-            <div class="vf-help vf-key-warning">⚠️ No key found for this provider. Enter one manually.</div>
-          </template>
-        </div>
+      <label class="vf-label">API Key</label>
+      <div class="vf-key-info">
+        If left empty, the plugin will automatically use the key from your Agent Zero 
+        <code>.env</code> file (e.g. <code>API_KEY_OLLAMA_CLOUD</code>).
+      </div>
+      <label class="vf-toggle vf-key-toggle">
+        <input type="checkbox" x-model="showCustomKey" />
+        <span>Enter a custom key</span>
+      </label>
+      <template x-if="showCustomKey">
+        <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-..." />
       </template>
     </div>
 
-    <!-- API Base URL only for custom provider -->
     <template x-if="config.vision_model.provider === 'other'">
       <div class="vf-field">
         <label class="vf-label">API Base URL</label>
@@ -111,10 +84,7 @@
       color: var(--color-text-primary, inherit);
       box-sizing: border-box;
     }
-    .vf-input:focus {
-      outline: none;
-      border-color: var(--color-accent, #3b82f6);
-    }
+    .vf-input:focus { outline: none; border-color: var(--color-accent, #3b82f6); }
     .vf-help { font-size: 0.85em; color: var(--color-text-secondary, #888); margin-top: 4px; }
     .vf-help code {
       padding: 2px 6px;
@@ -130,24 +100,18 @@
       padding-bottom: 8px;
       border-bottom: 1px solid var(--color-border, #333);
     }
-    .vf-key-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 0.9em;
+    .vf-key-info {
+      font-size: 0.85em;
+      color: var(--color-text-secondary, #888);
       margin-bottom: 8px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: var(--color-bg-code, rgba(128,128,128,0.1));
     }
-    .vf-key-detected {
-      background: rgba(39, 174, 96, 0.15);
-      color: #27ae60;
-      border: 1px solid rgba(39, 174, 96, 0.3);
-    }
-    .vf-key-detected code {
-      background: rgba(39, 174, 96, 0.1);
+    .vf-key-info code {
       padding: 1px 5px;
       border-radius: 3px;
+      background: var(--color-bg-code, rgba(128,128,128,0.2));
       font-size: 0.9em;
     }
     .vf-key-toggle {
@@ -155,9 +119,6 @@
       color: var(--color-text-secondary, #888);
       cursor: pointer;
       margin-bottom: 8px;
-    }
-    .vf-key-warning {
-      color: #e67e22;
     }
   </style>
 </body>
