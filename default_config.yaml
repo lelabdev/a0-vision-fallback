@@ -1,0 +1,16 @@
+# Vision Fallback Plugin Configuration
+
+# Enable or disable the vision fallback
+enabled: true
+
+# Vision model settings
+# This model will be used ONLY for describing images when the main chat model
+doesn't support vision.
+vision_model:
+  provider: "openrouter"
+  name: "google/gemini-2.5-flash"
+  api_key: ""
+  api_base: ""
+
+# Prompt sent to the vision model to describe images
+prompt: "Describe this image in detail. Include objects, colors, text, layout, and any notable features. Be concise but thorough."

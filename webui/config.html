@@ -1,0 +1,77 @@
+<html>
+<head>
+  <title>Vision Fallback Settings</title>
+  <script type="module">
+    import { store } from "/components/plugins/plugin-settings-store.js";
+  </script>
+  <style>
+    .vf-field { margin-bottom: 16px; }
+    .vf-label { display: block; font-weight: 600; margin-bottom: 4px; color: var(--text-primary, #333); }
+    .vf-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color, #ddd); border-radius: 6px; background: var(--bg-secondary, #fff); color: var(--text-primary, #333); box-sizing: border-box; }
+    .vf-help { font-size: 0.85em; color: var(--text-secondary, #888); margin-top: 4px; }
+    .vf-toggle { display: flex; align-items: center; gap: 8px; }
+    .vf-section { font-size: 1.1em; font-weight: 700; margin: 20px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color, #eee); }
+  </style>
+</head>
+<body>
+  <div x-data>
+    <template x-if="$store.pluginSettingsPrototype">
+      <div x-init="$store.pluginSettingsPrototype.onOpen()">
+
+        <div class="vf-section">⚡ Vision Fallback</div>
+
+        <div class="vf-field">
+          <label class="vf-toggle">
+            <input type="checkbox" x-model="config.enabled" />
+            <span><strong>Enable Vision Fallback</strong></span>
+          </label>
+          <div class="vf-help">When enabled, images are sent to a dedicated vision model instead of the main chat model (which may not support vision).</div>
+        </div>
+
+        <div class="vf-section">Vision Model Configuration</div>
+
+        <div class="vf-field">
+          <label class="vf-label">Provider</label>
+          <select class="vf-input" x-model="config.vision_model.provider">
+            <option value="openrouter">OpenRouter</option>
+            <option value="ollama">Ollama (Local)</option>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="google">Google AI</option>
+            <option value="groq">Groq</option>
+            <option value="other">Other (LiteLLM)</option>
+          </select>
+          <div class="vf-help">The provider for the vision model.</div>
+        </div>
+
+        <div class="vf-field">
+          <label class="vf-label">Model Name</label>
+          <input type="text" class="vf-input" x-model="config.vision_model.name" placeholder="google/gemini-2.5-flash" />
+          <div class="vf-help">The model to use for image description. Examples: <code>google/gemini-2.5-flash</code>, <code>llama3.2-vision</code>, <code>gpt-4o-mini</code></div>
+        </div>
+
+        <div class="vf-field">
+          <label class="vf-label">API Key</label>
+          <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-or-..." />
+          <div class="vf-help">API key for the provider. Leave empty for local models (Ollama).</div>
+        </div>
+
+        <div class="vf-field">
+          <label class="vf-label">API Base URL (optional)</label>
+          <input type="text" class="vf-input" x-model="config.vision_model.api_base" placeholder="http://localhost:11434" />
+          <div class="vf-help">Custom endpoint URL. Leave empty unless using a custom/local server.</div>
+        </div>
+
+        <div class="vf-section">Description Prompt</div>
+
+        <div class="vf-field">
+          <label class="vf-label">Prompt</label>
+          <textarea class="vf-input" x-model="config.prompt" rows="3" placeholder="Describe this image..."></textarea>
+          <div class="vf-help">The prompt sent to the vision model when describing images.</div>
+        </div>
+
+      </div>
+    </template>
+  </div>
+</body>
+</html>

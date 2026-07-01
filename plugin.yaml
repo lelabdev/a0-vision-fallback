@@ -1,0 +1,8 @@
+name: vision_fallback
+title: Vision Fallback
+description: Routes image analysis to a dedicated vision model when the chat model doesn't support vision.
+version: 1.0.0
+settings_sections:
+  - agent
+per_project_config: false
+per_agent_config: false
