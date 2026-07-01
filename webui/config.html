@@ -6,11 +6,35 @@
   </script>
   <style>
     .vf-field { margin-bottom: 16px; }
-    .vf-label { display: block; font-weight: 600; margin-bottom: 4px; color: var(--text-primary, #333); }
-    .vf-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color, #ddd); border-radius: 6px; background: var(--bg-secondary, #fff); color: var(--text-primary, #333); box-sizing: border-box; }
-    .vf-help { font-size: 0.85em; color: var(--text-secondary, #888); margin-top: 4px; }
+    .vf-label { display: block; font-weight: 600; margin-bottom: 4px; }
+    .vf-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color, #444);
+      border-radius: 6px;
+      background: var(--bg-input, inherit);
+      color: var(--text-primary, inherit);
+      box-sizing: border-box;
+    }
+    .vf-input:focus {
+      outline: none;
+      border-color: var(--accent-color, #3b82f6);
+    }
+    .vf-help { font-size: 0.85em; opacity: 0.7; margin-top: 4px; }
     .vf-toggle { display: flex; align-items: center; gap: 8px; }
-    .vf-section { font-size: 1.1em; font-weight: 700; margin: 20px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color, #eee); }
+    .vf-section {
+      font-size: 1.1em;
+      font-weight: 700;
+      margin: 20px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color, var(--border-light, #333));
+    }
+    .vf-hint code {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--bg-code, rgba(128,128,128,0.15));
+      font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
@@ -35,6 +59,7 @@
           <select class="vf-input" x-model="config.vision_model.provider">
             <option value="openrouter">OpenRouter</option>
             <option value="ollama">Ollama (Local)</option>
+            <option value="ollama_cloud">Ollama Cloud</option>
             <option value="openai">OpenAI</option>
             <option value="anthropic">Anthropic</option>
             <option value="google">Google AI</option>
@@ -47,19 +72,19 @@
         <div class="vf-field">
           <label class="vf-label">Model Name</label>
           <input type="text" class="vf-input" x-model="config.vision_model.name" placeholder="google/gemini-2.5-flash" />
-          <div class="vf-help">The model to use for image description. Examples: <code>google/gemini-2.5-flash</code>, <code>llama3.2-vision</code>, <code>gpt-4o-mini</code></div>
+          <div class="vf-help vf-hint">Examples: <code>google/gemini-2.5-flash</code>, <code>llama3.2-vision</code>, <code>gpt-4o-mini</code>, <code>gpt-oss:120b</code></div>
         </div>
 
         <div class="vf-field">
           <label class="vf-label">API Key</label>
-          <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-or-..." />
-          <div class="vf-help">API key for the provider. Leave empty for local models (Ollama).</div>
+          <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="sk-... / OLLAMA_API_KEY" />
+          <div class="vf-help">API key for the provider. Leave empty for local models (Ollama local).</div>
         </div>
 
         <div class="vf-field">
           <label class="vf-label">API Base URL (optional)</label>
-          <input type="text" class="vf-input" x-model="config.vision_model.api_base" placeholder="http://localhost:11434" />
-          <div class="vf-help">Custom endpoint URL. Leave empty unless using a custom/local server.</div>
+          <input type="text" class="vf-input" x-model="config.vision_model.api_base" placeholder="https://ollama.com" />
+          <div class="vf-help vf-hint">Auto-set for Ollama Cloud (<code>https://ollama.com</code>). Leave empty unless using a custom endpoint.</div>
         </div>
 
         <div class="vf-section">Description Prompt</div>

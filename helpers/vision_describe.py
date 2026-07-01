@@ -96,8 +96,16 @@ async def describe_image(image_path: str) -> str:
     api_base = model_cfg.get("api_base", "")
     prompt = get_prompt()
 
-    # Build the LiteLLM model string
-    litellm_model = f"{provider}/{model_name}" if provider not in ("openai", "azure") else model_name
+    # Build the LiteLLM model string and handle provider-specific settings
+    # LiteLLM uses "ollama" prefix for both local and cloud Ollama
+    if provider in ("ollama", "ollama_cloud"):
+        litellm_model = f"ollama/{model_name}"
+        if provider == "ollama_cloud" and not api_base:
+            api_base = "https://ollama.com"
+    elif provider not in ("openai", "azure"):
+        litellm_model = f"{provider}/{model_name}"
+    else:
+        litellm_model = model_name
 
     # Build messages for the vision model
     messages = [
