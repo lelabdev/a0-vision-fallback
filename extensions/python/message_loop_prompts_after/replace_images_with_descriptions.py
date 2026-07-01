@@ -7,12 +7,16 @@ If the chat model doesn't support vision, it sends each image to a dedicated
 vision model and replaces the image with a text description.
 """
 
-import json
-from helpers import print_style as ps, plugins
+from __future__ import annotations
+
+from agent import LoopData
+from helpers.extension import Extension
+from helpers import plugins
+from helpers.print_style import PrintStyle
+
 from usr.plugins.a0_vision_fallback.helpers.vision_describe import (
     is_enabled as fallback_is_enabled,
     describe_image,
-    estimate_tokens,
 )
 
 
@@ -50,57 +54,57 @@ def _find_image_blocks(content):
     return found
 
 
-async def message_loop_prompts_after(agent, loop_data):
-    """Intercept messages and replace images with text descriptions if needed."""
-    # Skip if fallback is disabled
-    if not fallback_is_enabled():
-        return
+class ReplaceImagesWithDescriptions(Extension):
+    async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
+        # Skip if fallback is disabled
+        if not fallback_is_enabled():
+            return
 
-    # Skip if chat model already supports vision
-    if _chat_model_supports_vision(agent):
-        return
+        # Skip if chat model already supports vision
+        if _chat_model_supports_vision(self.agent):
+            return
 
-    history_output = getattr(loop_data, "history_output", None)
-    if not history_output:
-        return
+        history_output = getattr(loop_data, "history_output", None)
+        if not history_output:
+            return
 
-    ps.PrintStyle(font_color="#8E44AD").print(
-        "[Vision Fallback] Scanning messages for image_url blocks..."
-    )
-
-    total_images = 0
-
-    for msg in history_output:
-        content = msg.get("content")
-        if content is None:
-            continue
-
-        image_blocks = _find_image_blocks(content)
-        if not image_blocks:
-            continue
-
-        # Replace each image block with a text description
-        for parent, idx, image_url in image_blocks:
-            total_images += 1
-            try:
-                ps.PrintStyle(font_color="#8E44AD").print(
-                    f"[Vision Fallback] Describing image: {image_url[:80]}..."
-                )
-                description = await describe_image(image_url)
-                parent[idx] = {
-                    "type": "text",
-                    "text": f"[Image description: {description}]",
-                }
-            except Exception as e:
-                ps.PrintStyle(font_color="#E74C3C").print(
-                    f"[Vision Fallback] Error describing image: {e}"
-                )
-                parent[idx] = {
-                    "type": "text",
-                    "text": f"[Image could not be described: {e}]",
-                }
-
-    if total_images > 0:
-        ps.PrintStyle(font_color="#27AE60").print(
-            f"[Vision Fallback] Replaced {total_images} image(s) with text descriptions."
+        PrintStyle(font_color="#8E44AD").print(
+            "[Vision Fallback] Scanning messages for image_url blocks..."
         )
+
+        total_images = 0
+
+        for msg in history_output:
+            content = msg.get("content")
+            if content is None:
+                continue
+
+            image_blocks = _find_image_blocks(content)
+            if not image_blocks:
+                continue
+
+            # Replace each image block with a text description
+            for parent, idx, image_url in image_blocks:
+                total_images += 1
+                try:
+                    PrintStyle(font_color="#8E44AD").print(
+                        f"[Vision Fallback] Describing image: {image_url[:80]}..."
+                    )
+                    description = await describe_image(image_url)
+                    parent[idx] = {
+                        "type": "text",
+                        "text": f"[Image description: {description}]",
+                    }
+                except Exception as e:
+                    PrintStyle(font_color="#E74C3C").print(
+                        f"[Vision Fallback] Error describing image: {e}"
+                    )
+                    parent[idx] = {
+                        "type": "text",
+                        "text": f"[Image could not be described: {e}]",
+                    }
+
+        if total_images > 0:
+            PrintStyle(font_color="#27AE60").print(
+                f"[Vision Fallback] Replaced {total_images} image(s) with text descriptions."
+            )
