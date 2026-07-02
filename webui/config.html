@@ -3,6 +3,7 @@
   <title>Vision Fallback Settings</title>
   <script type="module">
     import { callJsonApi } from "/js/api.js";
+    window.__vfCallJsonApi = callJsonApi;
   </script>
 </head>
 <body>
@@ -11,8 +12,16 @@
       showCustomKey: false,
       async loadKeys() {
         try {
-          const data = await callJsonApi('plugins/a0_vision_fallback/available_providers', {});
-          this.configuredProviders = data.configured || {};
+          // Wait for module to load
+          let attempts = 0;
+          while (!window.__vfCallJsonApi && attempts < 20) {
+            await new Promise(r => setTimeout(r, 50));
+            attempts++;
+          }
+          if (window.__vfCallJsonApi) {
+            const data = await window.__vfCallJsonApi('plugins/a0_vision_fallback/available_providers', {});
+            this.configuredProviders = data.configured || {};
+          }
         } catch(e) {
           this.configuredProviders = {};
         }
