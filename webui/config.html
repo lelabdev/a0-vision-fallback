@@ -3,15 +3,42 @@
   <title>Vision Fallback Settings</title>
 </head>
 <body>
-  <div x-data x-init="
-    if (!config.vision_model) config.vision_model = {};
-    if (!config.vision_model.provider) config.vision_model.provider = 'ollama_cloud';
-    if (!config.vision_model.name) config.vision_model.name = 'gemini-3-flash-preview';
-    if (!config.vision_model.api_key) config.vision_model.api_key = '';
-    if (!config.vision_model.api_base) config.vision_model.api_base = '';
-    if (!config.prompt) config.prompt = 'Describe this image in detail.';
-    if (config.enabled === undefined) config.enabled = true;
-  ">
+  <div x-data="{
+      keyStatus: {},
+      async loadKeys() {
+        try {
+          const res = await fetch('/api/plugins/a0_vision_fallback/available_providers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}',
+            credentials: 'same-origin'
+          });
+          if (res.ok) {
+            const data = await res.json();
+            this.keyStatus = data.configured || {};
+          }
+        } catch(e) {
+          this.keyStatus = {};
+        }
+      },
+      hasKey(provider) {
+        const p = this.keyStatus[provider];
+        return p && p.has_key;
+      },
+      getKeyMask(provider) {
+        const p = this.keyStatus[provider];
+        return p && p.masked ? p.masked : '';
+      }
+    }" x-init="
+      await this.loadKeys();
+      if (!config.vision_model) config.vision_model = {};
+      if (!config.vision_model.provider) config.vision_model.provider = 'ollama_cloud';
+      if (!config.vision_model.name) config.vision_model.name = 'gemini-3-flash-preview';
+      if (!config.vision_model.api_key) config.vision_model.api_key = '';
+      if (!config.vision_model.api_base) config.vision_model.api_base = '';
+      if (!config.prompt) config.prompt = 'Describe this image in detail.';
+      if (config.enabled === undefined) config.enabled = true;
+    ">
 
     <div class="vf-section">⚡ Vision Fallback</div>
 
@@ -28,15 +55,25 @@
     <div class="vf-field">
       <label class="vf-label">Provider</label>
       <select class="vf-input" x-model="config.vision_model.provider">
-        <option value="ollama_cloud">Ollama Cloud</option>
-        <option value="openrouter">OpenRouter</option>
-        <option value="ollama">Ollama (Local)</option>
-        <option value="openai">OpenAI</option>
-        <option value="anthropic">Anthropic</option>
-        <option value="google">Google AI</option>
-        <option value="groq">Groq</option>
+        <option value="ollama_cloud" x-text="hasKey('ollama_cloud') ? 'Ollama Cloud ✅' : 'Ollama Cloud'"></option>
+        <option value="openrouter" x-text="hasKey('openrouter') ? 'OpenRouter ✅' : 'OpenRouter'"></option>
+        <option value="ollama" x-text="hasKey('ollama') ? 'Ollama (Local) ✅' : 'Ollama (Local)'"></option>
+        <option value="openai" x-text="hasKey('openai') ? 'OpenAI ✅' : 'OpenAI'"></option>
+        <option value="anthropic" x-text="hasKey('anthropic') ? 'Anthropic ✅' : 'Anthropic'"></option>
+        <option value="google" x-text="hasKey('google') ? 'Google AI ✅' : 'Google AI'"></option>
+        <option value="groq" x-text="hasKey('groq') ? 'Groq ✅' : 'Groq'"></option>
         <option value="other">Other (Custom)</option>
       </select>
+      <template x-if="hasKey(config.vision_model.provider)">
+        <div class="vf-badge vf-badge-ok">
+          ✅ Key detected: <code x-text="getKeyMask(config.vision_model.provider)"></code>
+        </div>
+      </template>
+      <template x-if="!hasKey(config.vision_model.provider) && config.vision_model.provider !== 'other'">
+        <div class="vf-badge vf-badge-warn">
+          ⚠️ No key found in .env for this provider
+        </div>
+      </template>
     </div>
 
     <div class="vf-field">
@@ -47,11 +84,9 @@
 
     <div class="vf-field">
       <label class="vf-label">API Key</label>
-      <div class="vf-key-info">
-        💡 If left empty, the key is auto-resolved from your Agent Zero <code>.env</code> file
-        (e.g. <code>API_KEY_OLLAMA_CLOUD</code> for Ollama Cloud).
-      </div>
-      <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="Leave empty for auto-resolve" />
+      <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="Leave empty to use detected key" />
+      <div class="vf-help" x-show="hasKey(config.vision_model.provider)">Leave empty — key will be auto-resolved.</div>
+      <div class="vf-help" style="color: #e67e22;" x-show="!hasKey(config.vision_model.provider) && config.vision_model.provider !== 'other'">Enter a key manually — none found in .env.</div>
     </div>
 
     <template x-if="config.vision_model.provider === 'other'">
@@ -91,19 +126,29 @@
       padding-bottom: 8px;
       border-bottom: 1px solid var(--color-border, #333);
     }
-    .vf-key-info {
+    .vf-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
       font-size: 0.85em;
-      color: var(--color-text-secondary, #888);
-      margin-bottom: 8px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      background: var(--color-bg-code, rgba(128,128,128,0.1));
+      margin-top: 6px;
     }
-    .vf-key-info code {
+    .vf-badge code {
       padding: 1px 5px;
       border-radius: 3px;
-      background: var(--color-bg-code, rgba(128,128,128,0.2));
+      background: rgba(128,128,128,0.15);
       font-size: 0.9em;
+    }
+    .vf-badge-ok {
+      background: rgba(39, 174, 96, 0.15);
+      color: #27ae60;
+      border: 1px solid rgba(39, 174, 96, 0.3);
+    }
+    .vf-badge-ok code { background: rgba(39, 174, 96, 0.1); }
+    .vf-badge-warn {
+      background: rgba(230, 126, 34, 0.15);
+      color: #e67e22;
+      border: 1px solid rgba(230, 126, 34, 0.3);
     }
   </style>
 </body>
