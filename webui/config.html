@@ -22,12 +22,7 @@
         }
       },
       hasKey(provider) {
-        const p = this.keyStatus[provider];
-        return p && p.has_key;
-      },
-      getKeyMask(provider) {
-        const p = this.keyStatus[provider];
-        return p && p.masked ? p.masked : '';
+        return !!this.keyStatus[provider];
       }
     }" x-init="
       await this.loadKeys();
@@ -65,14 +60,10 @@
         <option value="other">Other (Custom)</option>
       </select>
       <template x-if="hasKey(config.vision_model.provider)">
-        <div class="vf-badge vf-badge-ok">
-          ✅ Key detected: <code x-text="getKeyMask(config.vision_model.provider)"></code>
-        </div>
+        <div class="vf-badge vf-badge-ok">✅ API key detected</div>
       </template>
       <template x-if="!hasKey(config.vision_model.provider) && config.vision_model.provider !== 'other'">
-        <div class="vf-badge vf-badge-warn">
-          ⚠️ No key found in .env for this provider
-        </div>
+        <div class="vf-badge vf-badge-warn">⚠️ No API key detected for this provider</div>
       </template>
     </div>
 
@@ -86,7 +77,7 @@
       <label class="vf-label">API Key</label>
       <input type="password" class="vf-input" x-model="config.vision_model.api_key" placeholder="Leave empty to use detected key" />
       <div class="vf-help" x-show="hasKey(config.vision_model.provider)">Leave empty — key will be auto-resolved.</div>
-      <div class="vf-help" style="color: #e67e22;" x-show="!hasKey(config.vision_model.provider) && config.vision_model.provider !== 'other'">Enter a key manually — none found in .env.</div>
+      <div class="vf-help" style="color: #e67e22;" x-show="!hasKey(config.vision_model.provider) && config.vision_model.provider !== 'other'">Enter a key manually — none detected.</div>
     </div>
 
     <template x-if="config.vision_model.provider === 'other'">
@@ -133,18 +124,11 @@
       font-size: 0.85em;
       margin-top: 6px;
     }
-    .vf-badge code {
-      padding: 1px 5px;
-      border-radius: 3px;
-      background: rgba(128,128,128,0.15);
-      font-size: 0.9em;
-    }
     .vf-badge-ok {
       background: rgba(39, 174, 96, 0.15);
       color: #27ae60;
       border: 1px solid rgba(39, 174, 96, 0.3);
     }
-    .vf-badge-ok code { background: rgba(39, 174, 96, 0.1); }
     .vf-badge-warn {
       background: rgba(230, 126, 34, 0.15);
       color: #e67e22;

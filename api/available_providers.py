@@ -1,5 +1,5 @@
 """
-API handler: returns which providers have API keys configured (masked).
+API handler: returns which providers have API keys configured.
 """
 
 import os
@@ -29,10 +29,5 @@ class AvailableProviders(ApiHandler):
         configured = {}
         for provider_id, env_var in PROVIDER_KEYS.items():
             key = os.environ.get(env_var, "").strip()
-            if key:
-                # Return masked key: first 8 chars + ****
-                masked = key[:8] + "****" if len(key) > 8 else "****"
-                configured[provider_id] = {"has_key": True, "masked": masked, "env_var": env_var}
-            else:
-                configured[provider_id] = {"has_key": False, "masked": "", "env_var": env_var}
+            configured[provider_id] = bool(key)
         return {"configured": configured}
