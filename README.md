@@ -70,6 +70,22 @@ Go to **Settings → Agent → Vision Fallback** in the Agent Zero web UI.
 | **Model Name** | Vision model to use | `gemini-3-flash-preview` |
 | **API Key** | Custom key (optional — auto-resolved from `.env` if empty) | `""` |
 
+> **Advanced:** the `vision_model` config also accepts an optional `kwargs`
+> mapping that is passed straight to LiteLLM (e.g. `temperature`, `top_p`,
+> `extra_body`). This is handy for OpenAI-compatible / local backends that need
+> provider-specific parameters — for example a vLLM-served reasoning model:
+>
+> ```yaml
+> vision_model:
+>   provider: "openai"
+>   name: "openai/my-local-vlm"
+>   api_base: "http://localhost:8000/v1"
+>   kwargs:
+>     extra_body:
+>       chat_template_kwargs:
+>         enable_thinking: false   # caption instead of "thinking"
+> ```
+
 ### Recommended Vision Models
 
 | Model | Provider | Vision | Cost |

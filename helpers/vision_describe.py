@@ -158,6 +158,22 @@ async def describe_image(image_path: str) -> str:
     if api_base:
         kwargs["api_base"] = api_base
 
+    # Optional extra kwargs passed straight to litellm (e.g. extra_body,
+    # temperature, top_p). Useful for OpenAI-compatible / local backends that
+    # need provider-specific parameters -- for example a vLLM-served reasoning
+    # model, where
+    #   kwargs:
+    #     extra_body:
+    #       chat_template_kwargs:
+    #         enable_thinking: false
+    # stops the model from emitting reasoning into (or emptying) the caption.
+    # Reserved request keys are protected so config can't reshape the call.
+    extra = model_cfg.get("kwargs")
+    if isinstance(extra, dict):
+        for key, value in extra.items():
+            if key not in ("model", "messages", "stream"):
+                kwargs[key] = value
+
     try:
         response = await litellm.acompletion(**kwargs)
         description = response.choices[0].message.content.strip()

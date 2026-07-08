@@ -5,5 +5,12 @@ vision_model:
   name: "google/gemini-2.5-flash"
   api_key: ""
   api_base: ""
+  # Optional: extra params passed straight to litellm (e.g. temperature,
+  # top_p, extra_body). Handy for OpenAI-compatible / local backends. Example
+  # for a vLLM-served reasoning model, so it captions instead of "thinking":
+  # kwargs:
+  #   extra_body:
+  #     chat_template_kwargs:
+  #       enable_thinking: false
 
 prompt: "Describe this image in detail."
